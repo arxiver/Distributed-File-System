@@ -12,5 +12,6 @@ if (__name__ == '__main__'):
         print(node)
     print(replica_factor)
 
-    LOOKUP_TABLE = pd.DataFrame()
+    LOOKUP_TABLE = pd.DataFrame({'user_id':[], 'filename':[], 'node_number':[], 'path_on_node':[], 'is_node_alive':[]})
+    print(LOOKUP_TABLE)
 
