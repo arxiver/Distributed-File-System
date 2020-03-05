@@ -22,7 +22,7 @@ def isalive(_data,lock):
     lock.acquire() 
     _data['0']=0
     lock.release()
-def isalive2(x,lock):
+def isalive2(_data,lock):
     lock.acquire() 
     _data['1']=2
     lock.release()
@@ -33,7 +33,6 @@ if (__name__ == '__main__'):
 
     data_nodes = data['DataNodes']
     replica_factor = data['Rfactor']
-    #print(data_nodes[0]['IPv4'])
     for node in data_nodes:
         print(node)
     print(replica_factor)
