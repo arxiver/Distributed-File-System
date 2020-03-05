@@ -16,11 +16,9 @@ context = zmq.Context()
 Download = context.socket(zmq.REP)      # bind
 Upload = context.socket(zmq.PULL)       # bind
 Alive = context.socket(zmq.PUB)         # connect
-Successful = context.socket(zmq.PULL)   # connect
 
 MasterIP = None
 MasterPortSub = None
-MasterPortSuccessful = None
 
 MyInfo = {}
 
@@ -40,23 +38,19 @@ def Alarm(signum , frame):
 def DownloadMethod():
     pass
 
+
 # Upload 
 def UploadMethod():
-    pass
+    pass 
 
 # I'm Alive 
 def AliveMethod():
     Alive.send_pyobj(MyInfo)
 
-# Successful
-def SuccessfulMethod():
-    pass
-
 
 # Estaplish connection
 def Connections():
     Alive.connect("tcp://"+MasterIP+":"+MasterPortSub)
-    Successful.connect("tcp://"+MasterIP+":"+MasterPortSuccessful)
     Download.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortDownload"])
     Upload.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortUpload"])
 
@@ -72,10 +66,8 @@ if __name__ == "__main__":
 
     MasterIP = data["MasterIP"]
     MasterPortSub = data["MasterPortSub"]
-    MasterPortSuccessful = data["MasterPortSuccessful"]
 
 
-    MyInfo["message"] = "I'm alive"
     MyInfo["IP"] = sys.argv[1]
     MyInfo["PortDownload"] = sys.argv[2]
     MyInfo["PortUpload"] = sys.argv[3]
