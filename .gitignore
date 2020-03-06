@@ -128,4 +128,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Sofyan
+Document.pdf 
+testsender.py
+testreciever.py
+Videos/*
+Master.py
+
 

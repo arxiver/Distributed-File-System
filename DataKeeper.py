@@ -1,4 +1,15 @@
 #!/home/sofyan/anaconda3/bin/python
+
+''' 
+How to run this process
+    - ./DataKeeper.py ip PortOfDownload PortOfUpload
+
+    - in download method 
+        - the client will send an dictionary with (VIDEO_NAME) key
+
+    - in upload method 
+        - the client will send an dictionary with (VIDEO_NAME , VIDEO)
+'''
 #############################################################################################################
 #                                                libraries
 #############################################################################################################
@@ -11,48 +22,55 @@ import signal
 import threading
 
 ##############################################################################################################
-#                                                Variable
+#                                                Variables
 ##############################################################################################################
 context = zmq.Context()
 Download = context.socket(zmq.REP)      # bind
 Upload = context.socket(zmq.PULL)       # bind
-Alive = context.socket(zmq.PUB)         # connect
 
-MasterIP = None
-MasterPortSub = None
-
+PathOfVideos = None
 MyInfo = {}
 
 
-#############################################################################################################
-#                                                  Handlers
-############################################################################################################
-def Alarm(signum , frame):
-    AliveMethod()
-
 
 ##############################################################################################################
-#                                                  Connections
+#                                                  Functions
 ##############################################################################################################
 # Download 
 def DownloadMethod():
-    pass
+    while True:
+        Message = Download.recv_pyobj()
+        File = Message["VIDEO_NAME"]
+        Path = PathOfVideos+"/"+File
+        with open(Path,'rb') as vfile:
+            Vid=vfile.read()
+        Download.send_pyobj(Vid)
+        print("The client has downloaded a video")
 
 
 # Upload 
 def UploadMethod():
-    pass 
+    while True:
+        DataOfVideo = Upload.recv_pyobj()
+        Path=PathOfVideos+"/"+DataOfVideo["VIDEO_NAME"]
+        saveVideo(DataOfVideo["VIDEO"],Path)
+        print("The client has uploaded a video")
 
-# I'm Alive 
-def AliveMethod():
-    Alive.send_pyobj(MyInfo)
-    print("i have sent the message")
+
+# Save Video
+def saveVideo(video,Path:str):    
+    try:
+        with open(Path,'wb') as myfile:
+            myfile.write(video)
+        print("I have saved a video")
+        return True
+    except:
+        print("I can't save the video")
+        return False
 
 
 # Estaplish connection
 def Connections():
-    print(MasterIP)
-    Alive.connect("tcp://"+MasterIP+":"+MasterPortSub)
     Download.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortDownload"])
     Upload.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortUpload"])
 
@@ -67,10 +85,7 @@ if __name__ == "__main__":
     with open('DKConfig.json') as config_file:
         data = json.load(config_file)
 
-
-    MasterIP = data["MasterIP"]
-    MasterPortSub = data["MasterPortSub"]
-
+    PathOfVideos=data["PathOfVideos"]
 
     MyInfo["IP"] = sys.argv[1]
     MyInfo["PortDownload"] = sys.argv[2]
@@ -86,11 +101,6 @@ if __name__ == "__main__":
     UploadThread = threading.Thread(target=UploadMethod)
 
 
-    # signal alarm
-    signal.signal(signal.SIGALRM, Alarm)
-    signal.alarm(1)
-
-
     # Starting threads
     DownloadThread.start()
     UploadThread.start()
@@ -98,9 +108,6 @@ if __name__ == "__main__":
     DownloadThread.join()
     UploadThread.join()
 
-
-    while(True):
-        pass
     print("i have finished")
 
 
