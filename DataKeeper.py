@@ -8,6 +8,7 @@ import time
 import zmq
 import json
 import signal
+import threading
 
 ##############################################################################################################
 #                                                Variable
@@ -28,7 +29,6 @@ MyInfo = {}
 ############################################################################################################
 def Alarm(signum , frame):
     AliveMethod()
-    signal.alarm(1)
 
 
 ##############################################################################################################
@@ -46,10 +46,12 @@ def UploadMethod():
 # I'm Alive 
 def AliveMethod():
     Alive.send_pyobj(MyInfo)
+    print("i have sent the message")
 
 
 # Estaplish connection
 def Connections():
+    print(MasterIP)
     Alive.connect("tcp://"+MasterIP+":"+MasterPortSub)
     Download.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortDownload"])
     Upload.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortUpload"])
@@ -60,6 +62,8 @@ def Connections():
 ##############################################################################################################
 if __name__ == "__main__":
 
+
+    # Initial values 
     with open('DKConfig.json') as config_file:
         data = json.load(config_file)
 
@@ -72,10 +76,36 @@ if __name__ == "__main__":
     MyInfo["PortDownload"] = sys.argv[2]
     MyInfo["PortUpload"] = sys.argv[3]
 
+
+    # Estaplish connections
     Connections()
 
+
+    # Threading 
+    DownloadThread = threading.Thread(target=DownloadMethod)
+    UploadThread = threading.Thread(target=UploadMethod)
+
+
+    # signal alarm
     signal.signal(signal.SIGALRM, Alarm)
     signal.alarm(1)
+
+
+    # Starting threads
+    DownloadThread.start()
+    UploadThread.start()
+    
+    DownloadThread.join()
+    UploadThread.join()
+
+
+    while(True):
+        pass
+    print("i have finished")
+
+
+
+
 
 
 

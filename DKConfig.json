@@ -1,5 +1,4 @@
 {
-    "MasterIP" : "192.168.?.?",
-    "MasterPortSub" : "21",
-    "MasterPortSuccessful" : "22"
+    "MasterIP" : "192.168.12.21",
+    "MasterPortSub" : "31311"
 }
