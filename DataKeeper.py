@@ -1,4 +1,15 @@
 #!/home/sofyan/anaconda3/bin/python
+
+''' 
+How to run this process
+    - ./DataKeeper.py ip PortOfDownload PortOfUpload
+
+    - in download method 
+        - the client will send an dictionary with (VIDEO_NAME) key
+
+    - in upload method 
+        - the client will send an dictionary with (VIDEO_NAME , VIDEO)
+'''
 #############################################################################################################
 #                                                libraries
 #############################################################################################################
@@ -41,26 +52,25 @@ def DownloadMethod():
 def UploadMethod():
     while True:
         DataOfVideo = Upload.recv_pyobj()
-        saveVideo(DataOfVideo["VIDEO"],DataOfVideo["VIDEO_NAME"])
+        Path=PathOfVideos+"/"+DataOfVideo["VIDEO_NAME"]
+        saveVideo(DataOfVideo["VIDEO"],Path)
         print("The client has uploaded a video")
 
 
 # Save Video
-def saveVideo(video,VidName:str):    
+def saveVideo(video,Path:str):    
     try:
-        Path=PathOfVideos+"/"+VidName
         with open(Path,'wb') as myfile:
             myfile.write(video)
-        print("Done")
+        print("I have saved a video")
         return True
     except:
-        print("UnDone")
+        print("I can't save the video")
         return False
 
 
 # Estaplish connection
 def Connections():
-    print(MasterIP)
     Download.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortDownload"])
     Upload.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortUpload"])
 
@@ -74,10 +84,6 @@ if __name__ == "__main__":
     # Initial values 
     with open('DKConfig.json') as config_file:
         data = json.load(config_file)
-
-
-    MasterIP = data["MasterIP"]
-    MasterPortSub = data["MasterPortSub"]
 
     PathOfVideos=data["PathOfVideos"]
 

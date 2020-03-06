@@ -1,4 +1,12 @@
 #!/home/sofyan/anaconda3/bin/python
+'''
+How to run this process 
+    - in the file of DKConfig.json, put the IPs of master and the ports of sub connection    
+    which you will publish your messages 
+
+    - ./Alive ip PortOfDownload PortOfUpload
+'''
+
 #############################################################################################################
 #                                                libraries
 #############################################################################################################
