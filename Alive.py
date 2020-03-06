@@ -1,0 +1,61 @@
+#!/home/sofyan/anaconda3/bin/python
+#############################################################################################################
+#                                                libraries
+#############################################################################################################
+import sys
+import os 
+import time 
+import zmq
+import json
+import signal
+import threading
+
+##############################################################################################################
+#                                                Variable
+##############################################################################################################
+context = zmq.Context()
+Alive = context.socket(zmq.PUB)         # connect
+
+MasterIP = None
+MasterPortSub = None
+
+MyInfo = {}
+
+##############################################################################################################
+#                                                Connection
+##############################################################################################################
+def Connection():
+    Alive.connect("tcp://"+MasterIP+":"+MasterPortSub)
+
+
+
+##############################################################################################################
+#                                                   Sending message
+##############################################################################################################
+def SendingMessage():
+    while True:
+        Alive.send_pyobj(MyInfo)
+        print("i have sent the message")
+        time.sleep(1)
+
+##############################################################################################################
+#                                                   Main
+##############################################################################################################
+if __name__ == "__main__":
+
+    # Initial values 
+    with open('DKConfig.json') as config_file:
+        data = json.load(config_file)
+
+
+    MasterIP = data["MasterIP"]
+    MasterPortSub = data["MasterPortSub"]
+
+
+    MyInfo["IP"] = sys.argv[1]
+    MyInfo["PortDownload"] = sys.argv[2]
+    MyInfo["PortUpload"] = sys.argv[3]
+
+    Connection()
+    SendingMessage()
+

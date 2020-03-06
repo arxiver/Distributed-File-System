@@ -1,4 +1,5 @@
 {
-    "MasterIP" : "192.168.12.21",
-    "MasterPortSub" : "31311"
+    "MasterIP" : "127.0.1.1",
+    "MasterPortSub" : "21211",
+    "PathOfVideos" : "Videos"
 }
