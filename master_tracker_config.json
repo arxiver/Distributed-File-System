@@ -1,0 +1,7 @@
+{
+    "PortNumbers": [
+        "5556","5557","5558"
+    ],
+    "IPv4":"localhost",
+    "MASTER_MAIN_PORT":"5556"
+}
