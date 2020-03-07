@@ -7,7 +7,7 @@ import time
 
 context = zmq.Context()
 Client = context.socket(zmq.SUB)
-Client.bind("tcp://192.168.0.103:21211")
+Client.bind("tcp://127.0.0.1:5000")
 Client.subscribe("")
 
 time.sleep(2)

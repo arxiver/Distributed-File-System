@@ -4,7 +4,7 @@ How to run this process
     - in the file of DKConfig.json, put the IPs of master and the ports of sub connection    
     which you will publish your messages 
 
-    - ./Alive ip PortOfDownload PortOfUpload
+    - ./Alive (ip PortOfDownload PortOfUpload)?
 '''
 
 #############################################################################################################
@@ -63,6 +63,10 @@ if __name__ == "__main__":
     MasterIP = data["MasterIP"]
     MasterPortSub = data["MasterPortSub"]
     ID = data['ID']
+    
+    # MyInfo["IP"] = sys.argv[1]
+    # MyInfo["PortDownload"] = sys.argv[2]
+    # MyInfo["PortUpload"] = sys.argv[3]
 
     MyInfo["ID"] = ID
     Connection()

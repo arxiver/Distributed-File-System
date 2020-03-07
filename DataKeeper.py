@@ -50,6 +50,7 @@ MyInfo = {}
 def DownloadMethod():
     while True:
         Message = Download.recv_pyobj()
+        print("test")
         File = Message["VIDEO_NAME"]
         Path = PathOfVideos+"/"+File
         with open(Path,'rb') as vfile:
