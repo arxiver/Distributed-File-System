@@ -2,6 +2,8 @@
 
 ''' 
 How to run this process
+    - in config file i need the (ip of master + the port of successful message)
+
     - ./DataKeeper.py ip PortOfDownload PortOfUpload
 
     - in download method 
@@ -27,8 +29,14 @@ import threading
 context = zmq.Context()
 Download = context.socket(zmq.REP)      # bind
 Upload = context.socket(zmq.PULL)       # bind
+Successful = context.socket(zmq.PUB)    # connect
+ReplicateOrder= context.socket(zmq.PULL)
 
+MasterIP = None
 PathOfVideos = None
+MasterPortSuccessful = None
+MasterPortReplicate = None
+
 MyInfo = {}
 
 
@@ -45,7 +53,8 @@ def DownloadMethod():
         with open(Path,'rb') as vfile:
             Vid=vfile.read()
         Download.send_pyobj(Vid)
-        print("The client has downloaded a video")
+        SuccessfulMethod("Download")
+        print("The client has downloaded a video and the master has been told about that")
 
 
 # Upload 
@@ -54,7 +63,41 @@ def UploadMethod():
         DataOfVideo = Upload.recv_pyobj()
         Path=PathOfVideos+"/"+DataOfVideo["VIDEO_NAME"]
         saveVideo(DataOfVideo["VIDEO"],Path)
-        print("The client has uploaded a video")
+        SuccessfulMethod("Upload")
+        print("The client has uploaded a video  and the master has been told about that")
+
+def SuccessfulMethod(Type):
+    Messages = [
+            {"DownloadMassage" : "Download done" },
+            {"UploadMassage" : "Download done"},
+            {"ReplicateMassage" : "Replicate done"}
+        ]
+    if Type == "Download":
+        Object = Messages[0]
+    elif Type == "Upload":  
+        Object = Messages[1]
+    else: 
+        Object = Messages[2]
+    Successful.send_pyobj(Object)
+
+def ReplicateMethod():
+    while True:
+        Data = ReplicateOrder.recv_pyobj()
+        Video_Name  = Data["VIDEO_NAME"]
+        IPMachine = Data["IP"]
+        PortMachine = Data["PORT"]
+
+        contextMachine = zmq.Context()
+        ReplicateVideo = contextMachine.socket(zmq.PUSH)
+        ReplicateVideo.connect("tcp://"+IPMachine+":"+PortMachine)
+
+        Path = PathOfVideos+"/"+Video_Name
+        with open(Path,'rb') as vfile:
+            Vid=vfile.read()
+
+        MessageSent = {"VIDEO_NAME" : Video_Name , "VIDEO" : Vid}
+        ReplicateVideo.send_pyobj(MessageSent)
+        SuccessfulMethod("Replicate")
 
 
 # Save Video
@@ -73,6 +116,9 @@ def saveVideo(video,Path:str):
 def Connections():
     Download.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortDownload"])
     Upload.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortUpload"])
+    Successful.connect("tcp://"+MasterIP+":"+MasterPortSuccessful)
+    ReplicateOrder.connect("tcp://"+MasterIP+":"+MasterPortReplicate)
+
 
 
 ##############################################################################################################
@@ -86,6 +132,10 @@ if __name__ == "__main__":
         data = json.load(config_file)
 
     PathOfVideos=data["PathOfVideos"]
+    MasterIP = data["MasterIP"]
+    MasterPortSuccessful = data["MasterPortSuccessful"]
+    MasterPortReplicate = data["MasterPortReplicate"]
+
 
     MyInfo["IP"] = sys.argv[1]
     MyInfo["PortDownload"] = sys.argv[2]
@@ -99,14 +149,17 @@ if __name__ == "__main__":
     # Threading 
     DownloadThread = threading.Thread(target=DownloadMethod)
     UploadThread = threading.Thread(target=UploadMethod)
+    ReplicateThread = threading.Thread(target=ReplicateMethod)
 
 
     # Starting threads
     DownloadThread.start()
     UploadThread.start()
+    ReplicateThread.start()
     
     DownloadThread.join()
     UploadThread.join()
+    ReplicateThread.join()
 
     print("i have finished")
 
