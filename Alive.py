@@ -24,6 +24,7 @@ import threading
 context = zmq.Context()
 Alive = context.socket(zmq.PUB)         # connect
 
+
 MasterIP = None
 MasterPortSub = None
 
@@ -38,13 +39,16 @@ def Connection():
 
 
 ##############################################################################################################
-#                                                   Sending message
+#                                        Function of connections
 ##############################################################################################################
 def SendingMessage():
     while True:
         Alive.send_pyobj(MyInfo)
         print("i have sent the message")
         time.sleep(1)
+
+
+
 
 ##############################################################################################################
 #                                                   Main
