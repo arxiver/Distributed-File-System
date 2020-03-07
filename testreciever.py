@@ -19,10 +19,10 @@ def saveVideo(video,videoName:str):
     except:
         return False
 
-DataOfVid = {"VIDEO_NAME":"cat.mp4"}
+DataOfVid = {"VIDEO_NAME":"cat5.mp4"}
 context = zmq.Context()
 reciever = context.socket(zmq.REQ) 
-reciever.connect("tcp://127.0.1.1:21211")
+reciever.connect("tcp://127.0.0.1:6001")
 reciever.send_pyobj(DataOfVid)
 video=reciever.recv_pyobj()
 # print(video)

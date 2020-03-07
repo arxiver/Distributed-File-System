@@ -6,6 +6,8 @@ How to run this process
 
     - ./DataKeeper.py ip PortOfDownload PortOfUpload
 
+    - in config file i need the (ip of master + the port of successful message)
+
     - in download method 
         - the client will send an dictionary with (VIDEO_NAME) key
 
@@ -29,7 +31,7 @@ import threading
 context = zmq.Context()
 Download = context.socket(zmq.REP)      # bind
 Upload = context.socket(zmq.PULL)       # bind
-Successful = context.socket(zmq.PUB)    # connect
+Successful = context.socket(zmq.PUSH)    # connect
 ReplicateOrder= context.socket(zmq.PULL)
 
 MasterIP = None
@@ -53,7 +55,7 @@ def DownloadMethod():
         with open(Path,'rb') as vfile:
             Vid=vfile.read()
         Download.send_pyobj(Vid)
-        SuccessfulMethod("Download")
+        SuccessfulMethod("Download",Message["VIDEO_NAME"])
         print("The client has downloaded a video and the master has been told about that")
 
 
@@ -63,21 +65,20 @@ def UploadMethod():
         DataOfVideo = Upload.recv_pyobj()
         Path=PathOfVideos+"/"+DataOfVideo["VIDEO_NAME"]
         saveVideo(DataOfVideo["VIDEO"],Path)
-        SuccessfulMethod("Upload")
+        SuccessfulMethod("Upload",DataOfVideo["VIDEO_NAME"])
         print("The client has uploaded a video  and the master has been told about that")
 
-def SuccessfulMethod(Type):
-    Messages = [
-            {"DownloadMassage" : "Download done" },
-            {"UploadMassage" : "Download done"},
-            {"ReplicateMassage" : "Replicate done"}
-        ]
+def SuccessfulMethod(Type,File='MOHAMED.MP4'):
+    Object = {}
+    Object["IPv4"] = sys.argv[1]
     if Type == "Download":
-        Object = Messages[0]
+        Object["Port"] = sys.argv[2]
+        Object["Type"] = "D"
+        #Object["Filename"] = File
     elif Type == "Upload":  
-        Object = Messages[1]
-    else: 
-        Object = Messages[2]
+        Object["Port"] = sys.argv[3]
+        Object["Type"] = "U"
+        Object["Filename"] = File
     Successful.send_pyobj(Object)
 
 def ReplicateMethod():
@@ -135,8 +136,12 @@ if __name__ == "__main__":
     MasterIP = data["MasterIP"]
     MasterPortSuccessful = data["MasterPortSuccessful"]
     MasterPortReplicate = data["MasterPortReplicate"]
+<<<<<<< HEAD
 
+=======
+>>>>>>> f545a722679e4c49b77bf092362d75ff57d8f17b
 
+    
     MyInfo["IP"] = sys.argv[1]
     MyInfo["PortDownload"] = sys.argv[2]
     MyInfo["PortUpload"] = sys.argv[3]

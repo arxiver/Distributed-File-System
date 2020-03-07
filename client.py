@@ -6,6 +6,7 @@ import sys
 from zmq import Socket
 import cv2
 import json
+import random
 #############################################################3
 
 def initConnections(ports=['5556','5557','5558'],ip="localhost"):
@@ -14,8 +15,10 @@ def initConnections(ports=['5556','5557','5558'],ip="localhost"):
     '''
     context = zmq.Context()    
     socket = context.socket(zmq.REQ)
+    random.shuffle(ports)
     for port in ports:
         socket.connect ("tcp://"+ip+":%s" % port)
+        print(str(port))
     print('Done initializing master client ports')
     return socket
 
@@ -94,7 +97,7 @@ if __name__ == "__main__":
     fileName='cat.mp4'
     if(len(sys.argv)>1):
         typeOfOperation=str(sys.argv[1])
-    if(len(sys.argv)>1):
+    if(len(sys.argv)>2):
         fileName=str(sys.argv[2])
     if typeOfOperation=='u':
         uploadFile(fileName,masterSocket)

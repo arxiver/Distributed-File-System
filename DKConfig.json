@@ -1,7 +1,8 @@
 {
-    "MasterIP" : "192.168.0.103",
-    "MasterPortSub" : "21211",
-    "MasterPortSuccessful" : "21211",
+    "ID" : 1,
+    "MasterIP" : "127.0.0.1",
+    "MasterPortSub" : "5000",
+    "MasterPortSuccessful" : "5001",
     "MasterPortReplicate" : "21212",
     "PathOfVideos" : "Videos"
 }
