@@ -132,7 +132,7 @@ dmypy.json
 Document.pdf 
 testsender.py
 testreciever.py
-Videos/*
+Videos/*.mp4
 Master.py
 
 
