@@ -136,10 +136,6 @@ if __name__ == "__main__":
     MasterIP = data["MasterIP"]
     MasterPortSuccessful = data["MasterPortSuccessful"]
     MasterPortReplicate = data["MasterPortReplicate"]
-<<<<<<< HEAD
-
-=======
->>>>>>> f545a722679e4c49b77bf092362d75ff57d8f17b
 
     
     MyInfo["IP"] = sys.argv[1]
