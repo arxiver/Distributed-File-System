@@ -91,7 +91,7 @@ if __name__ == "__main__":
     #uploadSocket=None 
     with open('master_tracker_config.json') as f:
         masterInfo = json.load(f)
-        print(masterInfo)
+        #print(masterInfo)
     masterSocket=initConnections(masterInfo['PortNumbers'],masterInfo['IPv4']) 
     typeOfOperation='u'
     fileName='cat.mp4'

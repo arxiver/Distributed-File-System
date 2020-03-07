@@ -104,7 +104,7 @@ def port_freeing(data):
     isfree = json.loads((pd.DataFrame(table.loc[table['IPv4']==ipv4]))[x+'free'].iloc[0])
     ports = json.loads((pd.DataFrame(table.loc[table['IPv4']==ipv4]))[x+'Port'].iloc[0])
     for i in range(len(ports)):
-        print(ports[i])
+        #print(ports[i])
         if(ports[i] == port):
             isfree[i] = 1
     table.loc[table['IPv4']==ipv4,x+'free'] = json.dumps(isfree)
@@ -159,7 +159,7 @@ def append_file_todk(data):
     csvfile=table.to_csv()
     mem1.write(str(csvfile))    
     sem1.release()
-    print(newfiles)
+    #print(newfiles)
     return
 
 def download(filename='zmo.mo4'):
@@ -192,7 +192,7 @@ def download(filename='zmo.mo4'):
     csvfile=table.to_csv()
     mem1.write(str(csvfile))    
     sem1.release()
-    print(download_from_machine)
+    #print(download_from_machine)
     return download_from_machine
 
                 # get free port for this machine download 
@@ -223,35 +223,37 @@ if __name__ == "__main__":
     #port_freeing(free_test)
     #free_test = {'IPv4':'192.168.17.5','Type':'D','Port':6000}
     #port_freeing(free_test)
-    #append_file_todk({'IPv4':'192.168.17.4','Type':'D','Port':6000,'Filename':'zmo.mo4'})
+    append_file_todk({'IPv4':'192.168.17.3','Type':'D','Port':6000,'Filename':'zmq.mp4'})
     i = 0
     #download()
-    while True:
-        lu1 = updateMyLOOKUPTABLE(mem1,sem1,lu1,myNewrow=None,alive_list=None)
-        print(lu1)
-        #N_Replicates_Update()
-        print("TIMESTAMPE",i)
-        i+=1
-        time.sleep(1)
+    masterContext = zmq.Context()
+    masterSocket = masterContext.socket(zmq.REP)
+    masterSocket.bind("tcp://*:%s" % portMaster)
     while True:       
         messageClient = masterSocket.recv_pyobj()
-        print("Received request: ", messageClient)
+        print(messageClient)
+        #print("Received request: ", messageClient)
         if messageClient['REQ_TYPE']=='upload':     
-            #GetFreeMachineForUpload()
-            #MakeNReplicates()
-            sendMessege={'PORT_NUMBER':'6556','IP':'localhost'}
-            masterSocket.send_pyobj(sendMessege)
+            uploadpath = upload()
+            #uploadpath = None
+            if len(uploadpath) > 0:
+                sendMessege={'PORT_NUMBER':uploadpath[0][1],'IP':uploadpath[0][0]}
+                print(sendMessege)
+                masterSocket.send_pyobj(sendMessege)
             dkPort='6556'
             dkContext = zmq.Context()
             consumer_receiver = dkContext.socket(zmq.PULL)
             consumer_receiver.bind("tcp://*:6556")
             video=consumer_receiver.recv_pyobj()
-            print(video)
+            #print(video)
         elif messageClient['REQ_TYPE']=='download':
             fileName=messageClient['FILE_NAME']
             #search for dk which has the this file(video)
-            sendMessege={'DK_INFO':[('localhost','6557')]}
-            masterSocket.send_pyobj(sendMessege)
+            downloadpath = (download(fileName))
+            #print(downloadpath)
+            if len(downloadpath) > 0:
+                sendMessege={'DK_INFO':[(downloadpath[0][0],downloadpath[0][1])]}
+                masterSocket.send_pyobj(sendMessege)
             dkContext = zmq.Context()
             dk_download = dkContext.socket(zmq.REP)
             dk_download.bind("tcp://*:6557")
