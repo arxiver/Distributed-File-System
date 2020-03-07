@@ -72,14 +72,27 @@ def init(id,LU):
 
 def Alarm(signum,frame):
     global lu1,mem1,sem1
-    print("HALLO FROM ALARM")
+    #print("HALLO FROM ALARM")
     global ALIVES
     localalives = ALIVES
-    print(localalives)
+    #print(localalives)
     [lu1,mem1,sem1] = updateMyLOOKUPTABLE(mem1,sem1,lu1,myNewrow=None,alive_list=localalives)
     ALIVES = np.zeros(len(lu1))
-    print(lu1)
+    #print(lu1)
     signal.alarm(1)
+    return 
+
+def ReceiveSuccessful():
+    context = zmq.Context()
+    socket = context.socket(zmq.PULL)
+    ALIVE_PORT = "5001"
+    socket.bind("tcp://127.0.0.1:5001")
+    print("Hi")
+    while True:
+        print("Before")
+        msg = socket.recv_pyobj()
+        print(msg)
+        print("After")
     
 if __name__ == "__main__":      
     global lu1,mem1,sem1,ALIVES
@@ -109,8 +122,9 @@ if __name__ == "__main__":
     socket.subscribe("")
     signal.signal(signal.SIGALRM, Alarm)
     signal.alarm(1)
-    
-    while True:
-        msg = socket.recv_pyobj()
-        ALIVES[int(msg["ID"])] = 1
+    #t1 = threading.Thread(target=ReceiveSuccessful, args=()) 
+    ReceiveSuccessful()
+    #while True:
+    #    msg = socket.recv_pyobj()
+    #    ALIVES[int(msg["ID"])] = 1
         #print("%s" % msg)

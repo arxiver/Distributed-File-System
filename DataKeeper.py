@@ -29,7 +29,7 @@ import threading
 context = zmq.Context()
 Download = context.socket(zmq.REP)      # bind
 Upload = context.socket(zmq.PULL)       # bind
-Successful = context.socket(zmq.PUB)    # connect
+Successful = context.socket(zmq.PUSH)    # connect
 ReplicateOrder= context.socket(zmq.PULL)
 
 MasterIP = None
@@ -53,7 +53,7 @@ def DownloadMethod():
         with open(Path,'rb') as vfile:
             Vid=vfile.read()
         Download.send_pyobj(Vid)
-        SuccessfulMethod("Download")
+        SuccessfulMethod("Download",Message["VIDEO_NAME"])
         print("The client has downloaded a video and the master has been told about that")
 
 
@@ -63,21 +63,20 @@ def UploadMethod():
         DataOfVideo = Upload.recv_pyobj()
         Path=PathOfVideos+"/"+DataOfVideo["VIDEO_NAME"]
         saveVideo(DataOfVideo["VIDEO"],Path)
-        SuccessfulMethod("Upload")
+        SuccessfulMethod("Upload",DataOfVideo["VIDEO_NAME"])
         print("The client has uploaded a video  and the master has been told about that")
 
-def SuccessfulMethod(Type):
-    Messages = [
-            {"DownloadMassage" : "Download done" },
-            {"UploadMassage" : "Download done"},
-            {"ReplicateMassage" : "Replicate done"}
-        ]
+def SuccessfulMethod(Type,File='MOHAMED.MP4'):
+    Object = {}
+    Object["IPv4"] = sys.argv[1]
     if Type == "Download":
-        Object = Messages[0]
+        Object["Port"] = sys.argv[2]
+        Object["Type"] = "D"
+        #Object["Filename"] = File
     elif Type == "Upload":  
-        Object = Messages[1]
-    else: 
-        Object = Messages[2]
+        Object["Port"] = sys.argv[3]
+        Object["Type"] = "U"
+        Object["Filename"] = File
     Successful.send_pyobj(Object)
 
 def ReplicateMethod():
@@ -136,7 +135,7 @@ if __name__ == "__main__":
     MasterPortSuccessful = data["MasterPortSuccessful"]
     MasterPortReplicate = data["MasterPortReplicate"]
 
-
+    
     MyInfo["IP"] = sys.argv[1]
     MyInfo["PortDownload"] = sys.argv[2]
     MyInfo["PortUpload"] = sys.argv[3]

@@ -13,7 +13,7 @@ import threading
 
 context = zmq.Context()
 Upload = context.socket(zmq.PUSH)       # bind
-Upload.connect("tcp://192.168.0.103:21212")
+Upload.connect("tcp://127.0.0.1:6000")
 
 DataOfVidoe = {"VIDEO_NAME" : "cat5.mp4"}
 Videopath = "cat.mp4"
