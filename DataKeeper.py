@@ -68,15 +68,16 @@ def UploadMethod():
 
 def SuccessfulMethod(Type,File='MOHAMED.MP4'):
     Object = {}
-    Object["IPv4"] = sys.argv[1]
+    Object["IPv4"] = MyInfo["IP"]
     if Type == "Download":
-        Object["Port"] = sys.argv[2]
+        Object["Port"] = MyInfo["PortDownload"]
         Object["Type"] = "D"
         #Object["Filename"] = File
     elif Type == "Upload":  
-        Object["Port"] = sys.argv[3]
+        Object["Port"] = MyInfo["PortUpload"]
         Object["Type"] = "U"
         Object["Filename"] = File
+        print('i have sent ')
     Successful.send_pyobj(Object)
 
 def ReplicateMethod():
@@ -113,6 +114,8 @@ def saveVideo(video,Path:str):
 
 # Estaplish connection
 def Connections():
+    dstring="tcp://"+MyInfo["IP"]+":"+MyInfo["PortDownload"]
+    print(dstring)
     Download.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortDownload"])
     Upload.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortUpload"])
     Successful.connect("tcp://"+MasterIP+":"+MasterPortSuccessful)
@@ -136,9 +139,9 @@ if __name__ == "__main__":
     MasterPortReplicate = data["MasterPortReplicate"]
 
     
-    MyInfo["IP"] = sys.argv[1]
-    MyInfo["PortDownload"] = sys.argv[2]
-    MyInfo["PortUpload"] = sys.argv[3]
+    MyInfo["IP"] = '127.0.0.1'
+    MyInfo["PortDownload"] = str(sys.argv[1])
+    MyInfo["PortUpload"] = str(sys.argv[2])
 
 
     # Estaplish connections

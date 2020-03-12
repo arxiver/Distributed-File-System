@@ -64,9 +64,9 @@ if __name__ == "__main__":
     MasterPortSub = data["MasterPortSub"]
 
     ID = data['ID']
-    MyInfo["IP"] = sys.argv[1]
-    MyInfo["PortDownload"] = sys.argv[2]
-    MyInfo["PortUpload"] = sys.argv[3]
+    MyInfo["IP"] = 'localhost'
+    MyInfo["PortDownload"] = 100
+    MyInfo["PortUpload"] = 100
     MyInfo["ID"] = ID
     Connection()
     SendingMessage()
