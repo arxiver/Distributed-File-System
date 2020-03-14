@@ -22,37 +22,6 @@ def initSemaphoreMain(id):
         semaphore = ss.Semaphore(id,ss.IPC_CREX)
     return semaphore
 
-def initMemory(id):
-    memory = ss.SharedMemory(id, ss.IPC_CREAT)
-    return memory
-
-def initSemaphore(id):
-    semaphore = ss.Semaphore(id, ss.IPC_CREAT)
-    return semaphore
-
-def updateMyLOOKUPTABLE(memory,semaphore,LOOKUP_TABLE,myNewrow=None,alive_list=None):
-    semaphore.acquire() 
-    mybytes=memory.read()
-    s=str(mybytes,'utf-8')
-    s=s[1:]
-    TESTDATA = StringIO(s)
-    LOOKUP_TABLE=pd.read_csv(TESTDATA,sep=',')
-    semaphore.release()
-    return LOOKUP_TABLE
-
-def init(id):
-    portMaster = "5556"
-    if(len(sys.argv)>1):
-        portMaster=str(sys.argv[1])
-    memory=initMemory(id)
-    semaphore=initSemaphore(id)
-    mybytes=memory.read()
-    s=str(mybytes,'utf-8')
-    s=s[1:]
-    TESTDATA = StringIO(s)
-    LOOKUP_TABLE=pd.read_csv(TESTDATA)
-    semaphore.release()
-    return [LOOKUP_TABLE,memory,semaphore]
 
 def readSendVideo(Videopath:str,socket:Socket):
     messagevid={}
@@ -62,12 +31,15 @@ def readSendVideo(Videopath:str,socket:Socket):
     socket.send_pyobj(messagevid)
     return True
 
+
+#this willl be in the download to require ports of the datakeepers ..
 def randports_acquire(n_needed=1,x='D'):
+    #you dont have to use semaphores in reading (ya mokhtar)...
     global lu1,mem1,sem1
-    sem1.acquire() 
+    sem1.acquire() #you don't need to 
     mybytes=mem1.read()
     s=str(mybytes,'utf-8')
-    s=s[1:]
+    s=s[1:] 
     TESTDATA = StringIO(s)    
     table = pd.read_csv(TESTDATA,sep=',')
     acq_count = 0
@@ -90,6 +62,8 @@ def randports_acquire(n_needed=1,x='D'):
     sem1.release()
     return acquired
 
+
+##why ?!
 def port_freeing(data):
     ipv4 = data['IPv4']
     port = data['Port']
@@ -104,7 +78,7 @@ def port_freeing(data):
     isfree = json.loads((pd.DataFrame(table.loc[table['IPv4']==ipv4]))[x+'free'].iloc[0])
     ports = json.loads((pd.DataFrame(table.loc[table['IPv4']==ipv4]))[x+'Port'].iloc[0])
     for i in range(len(ports)):
-        print(ports[i])
+        #print(ports[i])
         if(ports[i] == port):
             isfree[i] = 1
     table.loc[table['IPv4']==ipv4,x+'free'] = json.dumps(isfree)
@@ -113,6 +87,7 @@ def port_freeing(data):
     sem1.release()
     return 
 
+#??????????????????
 def port_acquire(data):
     ipv4 = data['IPv4']
     port = data['Port']
@@ -141,26 +116,6 @@ def replica_check():
 
 def upload():
     return randports_acquire(n_needed=1,x='U')
-
-def append_file_todk(data):
-    global lu1,mem1,sem1
-    ipv4 = data['IPv4']
-    port = data['Port']
-    filename = data['Filename']
-    sem1.acquire() 
-    mybytes=mem1.read()
-    s=str(mybytes,'utf-8')
-    s=s[1:]
-    TESTDATA = StringIO(s)    
-    table = pd.read_csv(TESTDATA,sep=',')
-    newfiles = json.loads((pd.DataFrame(table.loc[table['IPv4']==ipv4]))['Files'].iloc[0])
-    newfiles.append(filename)
-    table.loc[table['IPv4']==ipv4,'Files'] = json.dumps(newfiles)
-    csvfile=table.to_csv()
-    mem1.write(str(csvfile))    
-    sem1.release()
-    print(newfiles)
-    return
 
 def download(filename='zmo.mo4'):
     #search for alive maci
@@ -192,20 +147,9 @@ def download(filename='zmo.mo4'):
     csvfile=table.to_csv()
     mem1.write(str(csvfile))    
     sem1.release()
-    print(download_from_machine)
+    #print(download_from_machine)
     return download_from_machine
 
-                # get free port for this machine download 
-
-    #return
-    #table.loc[table['IPv4']==ipv4,x+'free'] = json.dumps(isfree)
-    csvfile=table.to_csv()
-    mem1.write(str(csvfile))    
-    sem1.release()
-    return 
-
-
-    pass
 
 if __name__ == "__main__":      
     id = 1334
@@ -223,39 +167,42 @@ if __name__ == "__main__":
     #port_freeing(free_test)
     #free_test = {'IPv4':'192.168.17.5','Type':'D','Port':6000}
     #port_freeing(free_test)
-    #append_file_todk({'IPv4':'192.168.17.4','Type':'D','Port':6000,'Filename':'zmo.mo4'})
+    #append_file_todk({'IPv4':'192.168.17.3','Type':'D','Port':6000,'Filename':'zmq.mp4'})
     i = 0
     #download()
-    while True:
-        lu1 = updateMyLOOKUPTABLE(mem1,sem1,lu1,myNewrow=None,alive_list=None)
-        print(lu1)
-        #N_Replicates_Update()
-        print("TIMESTAMPE",i)
-        i+=1
-        time.sleep(1)
+    masterContext = zmq.Context()
+    masterSocket = masterContext.socket(zmq.REP)
+    masterSocket.bind("tcp://*:%s" % portMaster)
+    print(portMaster)
     while True:       
         messageClient = masterSocket.recv_pyobj()
-        print("Received request: ", messageClient)
+        print(messageClient)
+        #print("Received request: ", messageClient)
         if messageClient['REQ_TYPE']=='upload':     
-            #GetFreeMachineForUpload()
-            #MakeNReplicates()
-            sendMessege={'PORT_NUMBER':'6556','IP':'localhost'}
-            masterSocket.send_pyobj(sendMessege)
-            dkPort='6556'
-            dkContext = zmq.Context()
-            consumer_receiver = dkContext.socket(zmq.PULL)
-            consumer_receiver.bind("tcp://*:6556")
-            video=consumer_receiver.recv_pyobj()
-            print(video)
+            uploadpath = upload()
+            #uploadpath = None
+            if len(uploadpath) > 0:
+                sendMessege={'PORT_NUMBER':uploadpath[0][1],'IP':uploadpath[0][0]}
+                print(sendMessege)
+                masterSocket.send_pyobj(sendMessege)
+            # dkPort='6556'
+            # dkContext = zmq.Context()
+            # consumer_receiver = dkContext.socket(zmq.PULL)
+            # consumer_receiver.bind("tcp://*:6556")
+            # video=consumer_receiver.recv_pyobj()
+            #print(video)
         elif messageClient['REQ_TYPE']=='download':
             fileName=messageClient['FILE_NAME']
             #search for dk which has the this file(video)
-            sendMessege={'DK_INFO':[('localhost','6557')]}
-            masterSocket.send_pyobj(sendMessege)
-            dkContext = zmq.Context()
-            dk_download = dkContext.socket(zmq.REP)
-            dk_download.bind("tcp://*:6557")
-            message = dk_download.recv_string()
-            print("Received request: ", message) 
-            readSendVideo('cat.mp4',dk_download)
+            downloadpath = (download(fileName))
+            #print(downloadpath)
+            if len(downloadpath) > 0:
+                sendMessege={'DK_INFO':[(downloadpath[0][0],downloadpath[0][1])]}
+                masterSocket.send_pyobj(sendMessege)
+            # dkContext = zmq.Context()
+            # dk_download = dkContext.socket(zmq.REP)
+            # dk_download.bind("tcp://*:6557")
+            # message = dk_download.recv_string()
+            # print("Received request: ", message) 
+            #readSendVideo('cat.mp4',dk_download)
 
