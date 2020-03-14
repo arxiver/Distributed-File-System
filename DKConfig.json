@@ -1,8 +1,8 @@
 {
     "ID" : 1,
 
-    "MasterIP" : "127.0.0.1",
-    "MasterPortSub" : "5000",
+    "MasterIP" : "192.168.43.233",
+    "MasterPortSub" : "5000",               
     "MasterPortSuccessful" : "5001",
     "MasterPortReplicate" : "21212",
     
