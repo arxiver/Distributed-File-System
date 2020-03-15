@@ -30,7 +30,7 @@ context = zmq.Context()
 Download = context.socket(zmq.REP)      # bind
 Upload = context.socket(zmq.PULL)       # bind
 Successful = context.socket(zmq.PUSH)    # connect
-ReplicateOrder= context.socket(zmq.PULL)
+ReplicateOrder= context.socket(zmq.SUB)
 
 MasterIP = None
 PathOfVideos = None
@@ -78,26 +78,42 @@ def SuccessfulMethod(Type,File='MOHAMED.MP4'):
         Object["Type"] = "U"
         Object["Filename"] = File
         print('i have sent ')
+    elif Type == "SRC":  
+        Object["Port"] = MyInfo["PortUpload"]
+        Object["Type"] = "U"
+        Object["Filename"] = File
+        print('i have sent ')
     Successful.send_pyobj(Object)
 
 def ReplicateMethod():
     while True:
-        Data = ReplicateOrder.recv_pyobj()
+        print("START IN REPLICA METHOD")
+        Data = ReplicateOrder.recv_pyobj()    # M1                           M2                     M3
+        # {"VIDEO_NAME": "VALUE", 'SRC': ['127.0.0.1', 6003], 'DST': [['192.168.17.4', 5001], ['192.168.17.5', 6001]]}
+        print("GOt ORDER",Data)
         Video_Name  = Data["VIDEO_NAME"]
-        IPMachine = Data["IP"]
-        PortMachine = Data["PORT"]
 
-        contextMachine = zmq.Context()
-        ReplicateVideo = contextMachine.socket(zmq.PUSH)
-        ReplicateVideo.connect("tcp://"+IPMachine+":"+PortMachine)
+        SRC = Data["SRC"]
+        DST = Data["DST"]
+        if(str(SRC[0]) == MyInfo["IP"] and str(SRC[1]) == MyInfo["PortUpload"]):
 
-        Path = PathOfVideos+"/"+Video_Name
-        with open(Path,'rb') as vfile:
-            Vid=vfile.read()
+            for i in DST:
 
-        MessageSent = {"VIDEO_NAME" : Video_Name , "VIDEO" : Vid}
-        ReplicateVideo.send_pyobj(MessageSent)
-        SuccessfulMethod("Replicate")
+                IPMachine = i[0]
+                PortMachine = str(i[1])
+
+                contextMachine = zmq.Context()
+                ReplicateVideo = contextMachine.socket(zmq.PUSH)
+                ReplicateVideo.connect("tcp://"+IPMachine+":"+PortMachine)
+
+                Path = PathOfVideos+"/"+Video_Name
+                with open(Path,'rb') as vfile:
+                    Vid=vfile.read()
+
+                MessageSent = {"VIDEO_NAME" : Video_Name , "VIDEO" : Vid}
+                ReplicateVideo.send_pyobj(MessageSent)
+            print("FINISHED_REPLICA")
+            SuccessfulMethod("SRC",Video_Name)
 
 
 # Save Video
@@ -120,6 +136,7 @@ def Connections():
     Upload.bind("tcp://"+MyInfo["IP"]+":"+MyInfo["PortUpload"])
     Successful.connect("tcp://"+MasterIP+":"+MasterPortSuccessful)
     ReplicateOrder.connect("tcp://"+MasterIP+":"+MasterPortReplicate)
+    ReplicateOrder.subscribe("")
 
 
 
@@ -139,9 +156,9 @@ if __name__ == "__main__":
     MasterPortReplicate = data["MasterPortReplicate"]
 
     
-    MyInfo["IP"] = '127.0.0.1'
-    MyInfo["PortDownload"] = str(sys.argv[1])
-    MyInfo["PortUpload"] = str(sys.argv[2])
+    MyInfo["IP"] = (sys.argv[1])
+    MyInfo["PortDownload"] = (sys.argv[2])
+    MyInfo["PortUpload"] = (sys.argv[3])
 
 
     # Estaplish connections

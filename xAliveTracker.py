@@ -13,12 +13,16 @@ import json
 import signal
 import threading
 import numpy as np
+from datetime import datetime
 
 #   MY GLOBAL VARAIBELS
 LOOKUP_TABLE=None 
 sharedMemory=None
 semaphore=None
 ALIVES=None
+replica_factor = 3
+replica_period = 3
+
 # end
 
 # initializeation Functions
@@ -84,7 +88,7 @@ def updateMyLOOKUPTABLE(myNewrow=None,alive_list=None,firstTime=False):
             sharedMemory.write(csvfile)
     # last thing is to release the semaphores
     semaphore.release() 
-    print(LOOKUP_TABLE)   
+    #print(LOOKUP_TABLE)   
     return
 
 
@@ -114,16 +118,14 @@ def initLookUpTable(id,data_keepers):
         node["ID"] = int(node["ID"])
         node['Dfree'] = [1] * (len(node['DPort']))
         node['Ufree'] = [1] * (len(node['UPort']))
-        print(type(node['Ufree']))
+        #print(type(node['Ufree']))
         node['Files'] = []
-        node['Alive'] = 1        
+        node['Alive'] = 0     
         LOOKUP_TABLE = LOOKUP_TABLE.append(node,ignore_index=True)   
     #write the LOOK UP TABLE into the memory 
     updateMyLOOKUPTABLE(firstTime=True)
     return
     
-    
-
 def alarm(signum,frame):
     '''
     this function will be called every 1 second
@@ -135,7 +137,7 @@ def alarm(signum,frame):
     #print(localalives)
     updateMyLOOKUPTABLE(alive_list=localalives)
     ALIVES = np.zeros(len(LOOKUP_TABLE))
-    #print(lu1)
+    #print(LOOKUP_TABLE)
     signal.alarm(1)
     return 
 
@@ -147,12 +149,14 @@ def receiveSuccessful(port:str):
     '''
     context = zmq.Context()
     socket = context.socket(zmq.PULL)    
-    socket.bind("tcp://127.0.0.1:"+port)
-    print("Hi")
+    socket.bind("tcp://127.0.0.1:"+str(port))
+    #print("Hi")
     while True:
-        print("Before")
+        #print("Before")
         msg = socket.recv_pyobj()
+        print("Freeing Port: ",msg)
         freePort(msg)
+        print("Has been free : ",msg)
     
 def freePort(data):
     global LOOKUP_TABLE,sharedMemory,semaphore
@@ -177,12 +181,138 @@ def freePort(data):
     LOOKUP_TABLE.loc[LOOKUP_TABLE['IPv4']==ipv4,x+'free'] = json.dumps(isfree)
     if (x == 'U'):
         newfiles = json.loads((pd.DataFrame(LOOKUP_TABLE.loc[LOOKUP_TABLE['IPv4']==ipv4]))['Files'].iloc[0])       
-        newfiles.append(filename)
-        LOOKUP_TABLE.loc[LOOKUP_TABLE['IPv4']==ipv4,'Files'] = json.dumps(newfiles)
+        if (filename not in newfiles):
+            newfiles.append(filename)
+            LOOKUP_TABLE.loc[LOOKUP_TABLE['IPv4']==ipv4,'Files'] = json.dumps(newfiles)
     csvfile=LOOKUP_TABLE.to_csv()
     sharedMemory.write(csvfile)   
     semaphore.release()    
+    print(str(datetime.now()))
+    print("freeing",data)
     return
+
+def acquire_port(table,ip,x,filename=None,isdist = 0):
+    acquired_port = None
+    isfree = json.loads(pd.DataFrame(table.loc[table['IPv4']==ip])[x+'free'].iloc[0])
+    ports =json.loads(pd.DataFrame(table.loc[table['IPv4']==ip])[x+'Port'].iloc[0])
+    for i in range(len(ports)):
+        if(isfree[i] == 1):
+            isfree[i] = 0
+            acquired_port = ports[i]
+            break
+    table.loc[table['IPv4']==ip,x+'free'] = json.dumps(isfree)
+    """"""
+    if(x=='U' and isdist):
+        newfiles = json.loads((pd.DataFrame(table.loc[table['IPv4']==ip]))['Files'].iloc[0])       
+        if (filename not in newfiles):
+            newfiles.append(filename)
+            table.loc[table['IPv4']==ip,'Files'] = json.dumps(newfiles)
+    return table,acquired_port
+
+
+def unacquire_util(table,ip,port,x):
+    isfree = json.loads(pd.DataFrame(table.loc[table['IPv4']==ip])[x+'free'].iloc[0])
+    ports =json.loads(pd.DataFrame(table.loc[table['IPv4']==ip])[x+'Port'].iloc[0])
+    for i in range(len(ports)):
+        if(int(ports[i]) == int(port)):
+            isfree[i] = 1
+    table.loc[table['IPv4']==ip,x+'free'] = json.dumps(isfree)
+    return table
+    
+
+
+def _load_file_nodes(table):
+    files = {}
+    # Get each file `s nodes (Data keepers ips)
+    for i in range(len(table)):
+        if (table.iloc[i]['Alive']==1):
+            node_files = json.loads(table.iloc[i]['Files'])
+            for f in node_files:
+                if(f in files.keys()):
+                    files[f].append(table.iloc[i]['IPv4'])
+                else :
+                    files[f] = [table.iloc[i]['IPv4']]
+    return files
+
+def _load_lookuptable(mybytes):
+    mybytes=sharedMemory.read()
+    s=str(mybytes,'utf-8')
+    s=s[1:]
+    TESTDATA = StringIO(s)    
+    table = pd.read_csv(TESTDATA,sep=',')
+    return table
+
+def replicaUpdate(replicaPort = "7808",replica_period=3):
+    context = zmq.Context()
+    replica_socket = context.socket(zmq.PUB)         # connect
+    replica_socket.bind("tcp://127.0.0.1:%s"%str(replicaPort))
+    while True:
+        _utilReplicaUpdate(replica_socket)
+        time.sleep(replica_period)
+
+def _utilReplicaUpdate(replica_socket):
+    global sharedMemory,semaphore,replica_factor
+    semaphore.acquire()
+    mybytes=sharedMemory.read()  
+    table = _load_lookuptable(mybytes)
+    files = _load_file_nodes(table)
+    allnodes = list(table[table['Alive']==1]["IPv4"])
+    for fkey in files.keys() : 
+        file_nodes = files[fkey]
+        instance_count = len(file_nodes)
+        if instance_count < replica_factor:
+            # find machine you can copy from go to each machine has free port to upload
+            source_port = None
+            source_ip = None
+            got_source = 0
+            for ip in file_nodes:
+                if (got_source == 1):
+                    break
+                else:
+                    table , source_port = acquire_port(table,ip,'U',filename=None,isdist=0)
+                    if (source_port != None):
+                        source_ip = ip
+                        got_source = 1
+            if (source_port == None):
+                continue 
+            source_machine = [source_ip,source_port]
+            print("*****************************************")
+            dst_nodes = (set(allnodes)-set(file_nodes))
+            print("DST_NODES",dst_nodes)
+            added_machines = instance_count
+            # selectMachineToCopyTo
+            dst_machines = []
+            for dst_ip in dst_nodes:
+                if (replica_factor <= added_machines):
+                    break
+                table, dst_port = acquire_port(table,dst_ip,'U',fkey,isdist=1)
+                if (dst_port != None):
+                        added_machines += 1
+                        dst_machines.append([dst_ip,dst_port])
+            if(len(dst_machines) == 0 ):
+                unacquire_util(table,source_ip,source_port,'U')
+            else:
+                NotifyMachineDataTransfer(source_machine, dst_machines,replica_socket,fkey)
+    csvfile=table.to_csv()
+    sharedMemory.write(str(csvfile))    
+    semaphore.release()
+    return 
+
+def NotifyMachineDataTransfer(source_machine, dst_machine,replica_socket,vname):
+    msg = {"VIDEO_NAME":vname,"SRC":source_machine,"DST":dst_machine}
+    replica_socket.send_pyobj(msg)
+    print("Notifiy Replica Orders")
+    print(msg)
+    return 
+
+def _print_table(period=2):
+    global sharedMemory,semaphore,replica_factor
+    while True:
+        mybytes=sharedMemory.read() 
+        table = _load_lookuptable(mybytes)
+        print(table)
+        time.sleep(period)
+
 
 if __name__ == "__main__":     
     # first load data from the json file to be used
@@ -192,8 +322,11 @@ if __name__ == "__main__":
     portSuccessefull=configData['PORT_SUCCESSEFULL']
     sharedMemoryID=int(configData['SHARED_MEMORY_ID'])
     portAlive = configData['PORT_ALIVE']
+    replica_factor = configData['ReplicaFactor']
+    replica_period = configData['ReplicaPeriod']
+    replicaPort = configData['ReplicaPort']
     # end of extracting data
-    print(str(portAlive))
+    #print(str(portAlive))
     #initializing LOOKUP TABLE
     initLookUpTable(sharedMemoryID,data_keepers)
     
@@ -212,9 +345,16 @@ if __name__ == "__main__":
     signal.alarm(1)
     t1 = threading.Thread(target=receiveSuccessful, args=[portSuccessefull]) 
     t1.start()
+    t2 = threading.Thread(target=replicaUpdate, args=[replicaPort,replica_period]) 
+    t2.start()
+    print_period = 3
+    t3 = threading.Thread(target=_print_table, args=[print_period]) 
+    t3.start()
 
-    
+    i = 0
     while True:
         msg = socket.recv_pyobj()
         ALIVES[int(msg["ID"])] = 1
-        print("%s" % msg)
+        print("timestamp : ",i)
+        i+=1
+    

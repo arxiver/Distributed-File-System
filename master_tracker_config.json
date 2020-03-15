@@ -1,18 +1,20 @@
 {
     "DataNodes": [
         { "ID":0,"IPv4": "192.168.17.2", "DPort": [3000, 3001],"UPort":[3002,3003] },
-        { "ID":1,"IPv4": "127.0.0.1", "DPort": [9200,9201],"UPort":[6002,6003] },
-        { "ID":2,"IPv4": "192.168.17.4", "DPort": [5000, 5001],"UPort":[5002,5003] },
-        { "ID":3,"IPv4": "192.168.17.5", "DPort": [6000, 6001],"UPort":[6002,6003] }
+        { "ID":1,"IPv4": "127.0.0.1", "DPort": [6000,6001],"UPort":[6002,6003] },
+        { "ID":2,"IPv4": "localhost", "DPort": [7000, 7001],"UPort":[7002,7003] },
+        { "ID":3,"IPv4": "192.168.1.7", "DPort": [8000, 8001],"UPort":[8002,8003] }
     ],
     "R": 7,
     "PORT_NUMBERS": [
-        "9025","9026","9027"
+        "9027"
     ],
     "PORT_SUCCESSEFULL":"5001",
     "PORT_ALIVE":"5000",
     "SHARED_MEMORY_ID":"1334",
-
+    "ReplicaFactor":3,
+    "ReplicaPeriod":3,
+    "ReplicaPort":7808,
     "IPv4":"localhost"
     
 }

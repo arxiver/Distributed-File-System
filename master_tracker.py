@@ -6,6 +6,7 @@ import pandas as pd
 import sysv_ipc as ss
 import json
 from io import StringIO
+from datetime import datetime
 
 #Global Variables
 LOOKUP_TABLE:pd.DataFrame=None
@@ -110,36 +111,38 @@ def randPortsAcquire(n_needed=1,x='D',filename='cat.mp4'):
     typeOfOperation=x  
     for i in range (LOOKUP_TABLE.shape[0]):
         if (int(LOOKUP_TABLE.iloc[i]['Alive'])==int(1)):
-            print('HI IAM ALIVE')
+            #print('HI IAM ALIVE')
             if(typeOfOperation=='D'):
                 fileList=json.loads(LOOKUP_TABLE.iloc[i]['Files'])
                 fileExist=False
                 for file in fileList:
                     if file == filename:
-                        print('Here Iam my old frie')
+                        #print('Here Iam my old frie')
                         fileExist=True
                 if(not fileExist):
                     continue
             ports =json.loads(LOOKUP_TABLE.iloc[i][x+'Port'])
             isfree =json.loads(LOOKUP_TABLE.iloc[i][x+'free'])
-            print('MY BEFORE')
-            print(isfree)
+            #print('MY BEFORE')
+            #print(isfree)
             for port in range(len(isfree)):                                
                 if (acq_count >= n_needed):                    
                     break
                 if(int(isfree[port]) == int(1)):
-                    print('iam stubid')
+             #       print('iam stubid')
                     #acquire and set
                     isfree[port] = 0
-                    print('HOOOOLAAA')
+              #      print('HOOOOLAAA')
                     acquired.append([LOOKUP_TABLE.iloc[i]["IPv4"] ,ports[port]])
                     acq_count += 1
-            print(isfree)
+            #print(isfree)
             LOOKUP_TABLE.loc[LOOKUP_TABLE['ID']==LOOKUP_TABLE.iloc[i]['ID'],x+'free'] = json.dumps(isfree)
     csvfile=LOOKUP_TABLE.to_csv()
     sharedMemory.write(csvfile)    
     semaphore.release()
-    print(acquired)
+    #print(acquired)
+    print(str(datetime.now()))
+    print(LOOKUP_TABLE)
     return acquired
 
 
@@ -185,7 +188,7 @@ if __name__ == "__main__":
             sendMessege={'STATUS':'success','PORT_NUMBER':str(freePortsList[0][1]),'IP':str(str(freePortsList[0][0]))}
             masterSocket.send_pyobj(sendMessege)            
         elif messageClient['REQ_TYPE']=='download':  
-            print('Hello Sadness My Dear Old Friend')
+            #print('Hello Sadness My Dear Old Friend')
             #search for dk which has the this file(video)
             fileName=messageClient['FILE_NAME']            
             freePortsList=randPortsAcquire(1,'D',filename=fileName)  
