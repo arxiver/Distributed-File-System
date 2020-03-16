@@ -4,7 +4,6 @@
     "MasterIP" : "192.168.43.233",
     "MasterPortSub" : "5000",               
     "MasterPortSuccessful" : "5001",
-    "MasterPortReplicate" : "21212",
-    
+    "MasterPortReplicate" : "7808",
     "PathOfVideos" : "Videos"
 }
