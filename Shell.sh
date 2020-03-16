@@ -9,6 +9,3 @@
 ./master_tracker.py 9027 > /dev/null 2>&1 &
 ./master_tracker.py 9028 > /dev/null 2>&1 &
 ./master_tracker.py 9029 > /dev/null 2>&1 &
-
-
-

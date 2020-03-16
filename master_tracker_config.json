@@ -7,7 +7,7 @@
     ],
     "R": 7,
     "PORT_NUMBERS": [
-        "9027"
+        "9027,9028,9029"
     ],
     "PORT_SUCCESSEFULL":"5001",
     "PORT_ALIVE":"5000",
